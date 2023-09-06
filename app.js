@@ -8,11 +8,20 @@ viewer.axes.setAxes();
 
 async function loadIfc(url) {
     await viewer.IFC.setWasmPath("../../../");
+    viewer.IFC.removeIfcModel(0);
     const model = await viewer.IFC.loadIfcUrl(url);
     await viewer.shadowDropper.renderShadow(model.modelID);
 }
 
-loadIfc('01.ifc');
+const input = document.getElementById("file-input");
+input.addEventListener(
+    "change",
+    async (changed) => {
+        const ifcURL = URL.createObjectURL(changed.target.files[0]);
+        loadIfc(ifcURL);
+    },
+    false
+);
 
 // Properties menu
 
