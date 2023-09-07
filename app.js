@@ -38,6 +38,7 @@ window.ondblclick = async () => {
         removeAllChildren(propsGUI);
         return;
     }
+    console.log(result);
     const {modelID, id} = result;
     const props = await viewer.IFC.getProperties(modelID, id, true, false);
     createPropertiesMenu(props);
@@ -46,8 +47,6 @@ window.ondblclick = async () => {
 const propsGUI = document.getElementById("ifc-property-menu-root");
 
 function createPropertiesMenu(properties) {
-    console.log(properties);
-
     removeAllChildren(propsGUI);
 
     delete properties.psets;
@@ -83,3 +82,78 @@ function removeAllChildren(element) {
         element.removeChild(element.firstChild);
     }
 }
+
+// Tree view
+const toggler = document.getElementsByClassName("caret");
+for (let i = 0; i < toggler.length; i++) {
+    toggler[i].onclick = () => {
+        toggler[i].parentElement.querySelector(".nested").classList.toggle("active");
+        toggler[i].classList.toggle("caret-down");
+    }
+}
+
+// Spatial tree menu
+function createTreeMenu(ifcProject) {
+    console.log("create tree menu");
+    const root = document.getElementById("tree-root");
+    removeAllChildren(root);
+    const ifcProjectNode = createNestedChild(root, ifcProject);
+    ifcProject.children.forEach(child => {
+        constructTreeMenuNode(ifcProjectNode, child);
+    })
+}
+
+function nodeToString(node) {
+    return `${node.type} - ${node.expressID}`
+}
+
+function constructTreeMenuNode(parent, node) {
+    const children = node.children;
+    if (children.length === 0) {
+        createSimpleChild(parent, node);
+        return;
+    }
+    const nodeElement = createNestedChild(parent, node);
+    children.forEach(child => {
+        constructTreeMenuNode(nodeElement, child);
+    })
+}
+
+function createNestedChild(parent, node) {
+    const content = nodeToString(node);
+    const root = document.createElement('li');
+    createTitle(root, content);
+    const childrenContainer = document.createElement('ul');
+    childrenContainer.classList.add("nested");
+    root.appendChild(childrenContainer);
+    parent.appendChild(root);
+    return childrenContainer;
+}
+
+function createTitle(parent, content) {
+    const title = document.createElement("span");
+    title.classList.add("caret");
+    title.onclick = () => {
+        title.parentElement.querySelector(".nested").classList.toggle("active");
+        title.classList.toggle("caret-down");
+    }
+    title.textContent = content;
+    parent.appendChild(title);
+}
+
+function createSimpleChild(parent, node) {
+    const content = nodeToString(node);
+    const childNode = document.createElement('li');
+    childNode.classList.add('leaf-node');
+    childNode.textContent = content;
+    parent.appendChild(childNode);
+
+    childNode.onmouseenter = () => {
+        viewer.IFC.selector.prepickIfcItemsByID(0, [node.expressID]);
+    }
+
+    childNode.onclick = async () => {
+        viewer.IFC.selector.pickIfcItemsByID(0, [node.expressID]);
+    }
+}
+
