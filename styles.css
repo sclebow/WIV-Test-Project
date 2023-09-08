@@ -5,8 +5,12 @@
     font-family: 'Roboto', sans-serif;
 }
 
-html, body {
+/* html, body {
     overflow: hidden;
+} */
+
+.file-input-container{
+    border-bottom: solid 1px gray;
 }
 
 #viewer-container {
@@ -90,7 +94,7 @@ html, body {
 .ifc-property-menu {
     border: 1px solid gray;
     width: 20rem;
-    position: absolute;
+    position: relative;
     background-color: white;
 }
 
@@ -110,10 +114,12 @@ html, body {
 /*Tree view: https://www.w3schools.com/howto/howto_js_treeview.asp*/
 
 .ifc-tree-menu {
-    position: absolute;
+    position: relative;
     overflow-y: scroll;
     background-color: white;
-    height: 100vh;
+    /* height: 6in; */
+    border-bottom: solid 1px gray;
+
 }
 
 li ul {
@@ -156,8 +162,12 @@ ul, #myUL {
     display: none;
 }
 
-/* Show the nested list when the user clicks on the caret/arrow (with JavaScript) */
 .active {
-    display: block;
-    margin-left: 10px;
+    display:block;
+    margin-left:10px;
 }
+
+.checkboxes {
+    position: relative;
+}
+

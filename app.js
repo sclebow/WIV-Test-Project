@@ -1,6 +1,16 @@
 import {Color} from 'three';
 import {IfcViewerAPI} from 'web-ifc-viewer';
 
+import {
+    IFCWALLSTANDARDCASE,
+    IFCSLAB,
+    IFCDOOR,
+    IFCWINDOW,
+    IFCFURNISHINGELEMENT,
+    IFCMEMBER,
+    IFCPLATE
+} from 'web-ifc';
+
 const container = document.getElementById('viewer-container');
 const viewer = new IfcViewerAPI({ container, backgroundColor: new Color(0xffffff)});
 viewer.grid.setGrid();
@@ -10,11 +20,13 @@ async function loadIfc(url) {
     await viewer.IFC.setWasmPath("../../../");
     viewer.IFC.removeIfcModel(0);
     const model = await viewer.IFC.loadIfcUrl(url);
+    // model.removeFromParent();
     await viewer.shadowDropper.renderShadow(model.modelID);
     viewer.context.renderer.postProduction.active = true;
 
     const ifcProject = await viewer.IFC.getSpatialStructure(model.modelID);
     createTreeMenu(ifcProject);
+    await setupAllCategories();
 }
 
 const input = document.getElementById("file-input");
@@ -26,8 +38,6 @@ input.addEventListener(
     },
     false
 );
-
-// Properties menu
 
 window.onmousemove = () => viewer.IFC.selector.prePickIfcItem();
 
@@ -43,6 +53,9 @@ window.ondblclick = async () => {
     const props = await viewer.IFC.getProperties(modelID, id, true, false);
     createPropertiesMenu(props);
 }
+
+
+// Properties menu
 
 const propsGUI = document.getElementById("ifc-property-menu-root");
 
@@ -93,8 +106,8 @@ for (let i = 0; i < toggler.length; i++) {
 }
 
 // Spatial tree menu
+
 function createTreeMenu(ifcProject) {
-    console.log("create tree menu");
     const root = document.getElementById("tree-root");
     removeAllChildren(root);
     const ifcProjectNode = createNestedChild(root, ifcProject);
@@ -157,3 +170,68 @@ function createSimpleChild(parent, node) {
     }
 }
 
+
+const scene = viewer.context.getScene();
+
+// List of categories names
+const categories = {
+	IFCWALLSTANDARDCASE,
+	IFCSLAB,
+	IFCFURNISHINGELEMENT,
+	IFCDOOR,
+	IFCWINDOW,
+	IFCPLATE,
+	IFCMEMBER,
+};
+
+// Gets the name of a category
+function getName(category) {
+	const names = Object.keys(categories);
+	return names.find(name => categories[name] === category);
+}
+
+// Gets all the items of a category
+async function getAll(category) {
+	return viewer.IFC.loader.ifcManager.getAllItemsOfType(0, category, false);
+}
+
+// Creates a new subset containing all elements of a category
+async function newSubsetOfType(category) {
+	const ids = await getAll(category);
+	return viewer.IFC.loader.ifcManager.createSubset({
+		modelID: 0,
+		scene,
+		ids,
+		removePrevious: true,
+		customID: category.toString(),
+	});
+}
+
+// Stores the created subsets
+const subsets = {};
+
+async function setupAllCategories() {
+	const allCategories = Object.values(categories);
+	for (let i = 0; i < allCategories.length; i++) {
+		const category = allCategories[i];
+		await setupCategory(category);
+	}
+}
+
+// Creates a new subset and configures the checkbox
+async function setupCategory(category) {
+	subsets[category] = await newSubsetOfType(category);
+	setupCheckBox(category);
+}
+
+// Sets up the checkbox event to hide / show elements
+function setupCheckBox(category) {
+	const name = getName(category);
+	const checkBox = document.getElementById(name);
+	checkBox.addEventListener('change', (event) => {
+		const checked = event.target.checked;
+		const subset = subsets[category];
+		if (checked) scene.add(subset);
+		else subset.removeFromParent();
+	});
+}
