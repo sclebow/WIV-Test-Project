@@ -1,5 +1,6 @@
 import {Color} from 'three';
 import {IfcViewerAPI} from 'web-ifc-viewer';
+import {IFCLoader} from 'web-ifc-three';
 
 import {
     IFCWALLSTANDARDCASE,
@@ -17,10 +18,10 @@ viewer.grid.setGrid();
 viewer.axes.setAxes();
 
 async function loadIfc(url) {
-    await viewer.IFC.setWasmPath("../../../");
+    // await viewer.IFC.setWasmPath("../../../");
     viewer.IFC.removeIfcModel(0);
     const model = await viewer.IFC.loadIfcUrl(url);
-    // model.removeFromParent();
+    model.removeFromParent();
     await viewer.shadowDropper.renderShadow(model.modelID);
     viewer.context.renderer.postProduction.active = true;
 
@@ -235,3 +236,26 @@ function setupCheckBox(category) {
 		else subset.removeFromParent();
 	});
 }
+
+//Sets up the IFC loading
+const ifcLoader = viewer.IFC.loader;
+
+
+async function setUpMultiThreading() {
+    const manager = ifcLoader.ifcManager;
+    // These paths depend on how you structure your project
+    await manager.useWebWorkers(true, '../IFCWorker.js');
+}
+
+setUpMultiThreading();
+
+function setupProgressNotification() {
+    const text = document.getElementById('progress-text');
+    ifcLoader.ifcManager.setOnProgress((event) => {
+      const percent = event.loaded / event.total * 100;
+        const result = Math.trunc(percent);
+        text.innerText = result.toString();
+    });
+}
+
+setupProgressNotification();
