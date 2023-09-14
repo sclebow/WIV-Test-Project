@@ -176,3 +176,16 @@ ul, #myUL {
     border-top: solid 1px green;
     border-bottom: solid 1px grey;
 }
+
+#button-container {
+    z-index: 2;
+    position: absolute;
+    margin: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+#button-container * {
+    margin: 0.5rem;
+    padding: 8px;
+}

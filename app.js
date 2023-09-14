@@ -1,4 +1,4 @@
-import {Color} from 'three';
+import {Color, LineBasicMaterial, MeshBasicMaterial} from 'three';
 import {IfcViewerAPI} from 'web-ifc-viewer';
 import {IFCLoader} from 'web-ifc-three';
 
@@ -19,15 +19,20 @@ viewer.axes.setAxes();
 
 async function loadIfc(url) {
     // await viewer.IFC.setWasmPath("../");
-    viewer.IFC.removeIfcModel(0);
+    viewer.IFC.removeIfcModel();
     const model = await viewer.IFC.loadIfcUrl(url);
-    model.removeFromParent();
+    // model.removeFromParent();
     await viewer.shadowDropper.renderShadow(model.modelID);
     viewer.context.renderer.postProduction.active = true;
 
     const ifcProject = await viewer.IFC.getSpatialStructure(model.modelID);
     createTreeMenu(ifcProject);
-    await setupAllCategories();
+    // await setupAllCategories();
+
+    // Setup Camera Controls
+    const controls = viewer.context.ifcCamera.cameraControls;
+    controls.setPosition(7.6, 4.3, 24.8, false);
+    controls.setTarget(-7.1, -0.3, 2.5, false);
 }
 
 const input = document.getElementById("file-input");
@@ -171,7 +176,6 @@ function createSimpleChild(parent, node) {
     }
 }
 
-
 const scene = viewer.context.getScene();
 
 // List of categories names
@@ -239,7 +243,6 @@ function setupCheckBox(category) {
 
 //Sets up the IFC loading
 const ifcLoader = viewer.IFC.loader;
-
 
 async function setUpMultiThreading() {
     const manager = ifcLoader.ifcManager;
