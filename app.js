@@ -1,15 +1,27 @@
 import {Color, LineBasicMaterial, MeshBasicMaterial} from 'three';
 import {IfcViewerAPI} from 'web-ifc-viewer';
 import {IFCLoader} from 'web-ifc-three';
+import {IfcAPI} from 'web-ifc/web-ifc-api';
 
 import {
     IFCWALLSTANDARDCASE,
-    IFCSLAB,
-    IFCDOOR,
+    IFCCURTAINWALL,
+    IFCCOLUMN,
+    IFCWALL,
     IFCWINDOW,
+    IFCDOOR,
+    IFCCOVERING,
+    IFCSLAB,
+    IFCSTAIR,
     IFCFURNISHINGELEMENT,
+    IFCBEAM,
+    IFCELEMENTASSEMBLY,
+    IFCROOF,
+    IFCFLOWTERMINAL,
+    IFCRAILING,
+    IFCPLATE,
     IFCMEMBER,
-    IFCPLATE
+    IFCSTAIRFLIGHT,    
 } from 'web-ifc';
 
 const container = document.getElementById('viewer-container');
@@ -19,15 +31,20 @@ viewer.axes.setAxes();
 
 async function loadIfc(url) {
     // await viewer.IFC.setWasmPath("../");
+    document.getElementById("file-input").remove();
+    document.getElementById("file-input-container").remove();
     viewer.IFC.removeIfcModel();
     const model = await viewer.IFC.loadIfcUrl(url);
-    // model.removeFromParent();
+    model.removeFromParent();
     await viewer.shadowDropper.renderShadow(model.modelID);
     viewer.context.renderer.postProduction.active = true;
 
+    viewer.dimensions.active = true;
+    viewer.dimensions.previewActive = true;
+
     const ifcProject = await viewer.IFC.getSpatialStructure(model.modelID);
     createTreeMenu(ifcProject);
-    // await setupAllCategories();
+    await setupAllCategories(ifcProject);
 
     // Setup Camera Controls
     const controls = viewer.context.ifcCamera.cameraControls;
@@ -178,21 +195,10 @@ function createSimpleChild(parent, node) {
 
 const scene = viewer.context.getScene();
 
-// List of categories names
-const categories = {
-	IFCWALLSTANDARDCASE,
-	IFCSLAB,
-	IFCFURNISHINGELEMENT,
-	IFCDOOR,
-	IFCWINDOW,
-	IFCPLATE,
-	IFCMEMBER,
-};
-
 // Gets the name of a category
 function getName(category) {
-	const names = Object.keys(categories);
-	return names.find(name => categories[name] === category);
+	const names = (categories_0);
+    return names[categories_0_ids.indexOf(category)];
 }
 
 // Gets all the items of a category
@@ -212,12 +218,32 @@ async function newSubsetOfType(category) {
 	});
 }
 
+const categories_0 = [];
+const categories_0_ids = [];
+
 // Stores the created subsets
 const subsets = {};
 
-async function setupAllCategories() {
-	const allCategories = Object.values(categories);
-	for (let i = 0; i < allCategories.length; i++) {
+async function getCategories(ifcProject, categories_0, categories_0_ids) {
+    if (!(categories_0.includes(ifcProject.type))){
+        categories_0.push(ifcProject.type);
+
+        id = await viewer.IFC.loader.ifcManager.ifcAPI.GetTypeCodeFromName(0, ifcProject.type);
+        categories_0_ids.push(id);
+    }
+    ifcProject.children.forEach(child => {
+        getCategories(child, categories_0, categories_0_ids);
+    })
+}
+
+async function setupAllCategories(ifcProject) {
+    await getCategories(ifcProject, categories_0, categories_0_ids);
+    console.log(categories_0);
+    console.log(categories_0_ids);
+
+	const allCategories = categories_0_ids;
+    // console.log(allCategories);
+    for (let i = 0; i < allCategories.length; i++) {
 		const category = allCategories[i];
 		await setupCategory(category);
 	}
@@ -232,7 +258,19 @@ async function setupCategory(category) {
 // Sets up the checkbox event to hide / show elements
 function setupCheckBox(category) {
 	const name = getName(category);
-	const checkBox = document.getElementById(name);
+    checkBox_container = document.getElementsByClassName('checkboxes')[0];
+
+    checkBox_div = document.createElement('div');
+    
+    checkBox = document.createElement('input');
+    checkBox.type = "checkbox";
+    checkBox_div.textContent = name;
+    checkBox.checked = true;
+
+    checkBox_div.appendChild(checkBox);
+    checkBox_container.appendChild(checkBox_div);
+
+	// const checkBox = document.getElementById(name);
 	checkBox.addEventListener('change', (event) => {
 		const checked = event.target.checked;
 		const subset = subsets[category];
