@@ -3,27 +3,6 @@ import {IfcViewerAPI} from 'web-ifc-viewer';
 import {IFCLoader} from 'web-ifc-three';
 import {IfcAPI} from 'web-ifc/web-ifc-api';
 
-import {
-    IFCWALLSTANDARDCASE,
-    IFCCURTAINWALL,
-    IFCCOLUMN,
-    IFCWALL,
-    IFCWINDOW,
-    IFCDOOR,
-    IFCCOVERING,
-    IFCSLAB,
-    IFCSTAIR,
-    IFCFURNISHINGELEMENT,
-    IFCBEAM,
-    IFCELEMENTASSEMBLY,
-    IFCROOF,
-    IFCFLOWTERMINAL,
-    IFCRAILING,
-    IFCPLATE,
-    IFCMEMBER,
-    IFCSTAIRFLIGHT,    
-} from 'web-ifc';
-
 const container = document.getElementById('viewer-container');
 const viewer = new IfcViewerAPI({ container, backgroundColor: new Color(0xffffff)});
 viewer.grid.setGrid();
@@ -33,11 +12,23 @@ async function loadIfc(url) {
     // await viewer.IFC.setWasmPath("../");
     document.getElementById("file-input").remove();
     document.getElementById("file-input-container").remove();
-    viewer.IFC.removeIfcModel();
     const model = await viewer.IFC.loadIfcUrl(url);
     model.removeFromParent();
     await viewer.shadowDropper.renderShadow(model.modelID);
     viewer.context.renderer.postProduction.active = true;
+
+    // Serialize properties
+    const result = await viewer.IFC.properties.serializeAllProperties(model);
+    
+    // Download the properties as JSON file
+    const file = new File(result, 'properties');
+
+    const link = document.createElement('a');
+    document.body.appendChild(link);
+    link.href = URL.createObjectURL(file);
+    link.download = 'properties.json';
+    link.click();
+    link.remove();
 
     viewer.dimensions.active = true;
     viewer.dimensions.previewActive = true;
@@ -77,6 +68,15 @@ window.ondblclick = async () => {
     createPropertiesMenu(props);
 }
 
+window.onkeydown = (event) => {
+    console.log(event.code);
+    if (event.code === 'KeyD') {
+        viewer.dimensions.create();
+    } else if (event.code === 'Delete') {
+        console.log('Deleting');
+        viewer.dimensions.delete();
+    }
+}
 
 // Properties menu
 
